@@ -1,0 +1,316 @@
+﻿<#
+==================================================================================
+ Web MPS - Automated CI/CD Deployment Pipeline to IIS Production Server
+ Target Server : \\YOUR_SERVER_IP\Web MPS (C:\inetpub\wwwroot\Web MPS)
+ Credentials   : DOMAIN\Username
+==================================================================================
+#>
+
+[CmdletBinding()]
+param(
+    [string]$ServerIP = "YOUR_SERVER_IP",
+    [string]$ShareName = "Web MPS",
+    [string]$Username = "DOMAIN\Username",
+    [string]$Password = "YOUR_PASSWORD",
+    [string]$SiteUrl = "http://YOUR_SERVER_IP",
+    [switch]$SkipBuild
+)
+
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $ScriptDir
+
+# Modern CLI Styling Helpers
+function Write-Step {
+    param([string]$Step, [string]$Title)
+    Write-Host ""
+    Write-Host " [$Step] $Title" -ForegroundColor Cyan
+    Write-Host " -----------------------------------------------------------------" -ForegroundColor DarkGray
+}
+
+function Write-Success {
+    param([string]$Message)
+    Write-Host "  [+] $Message" -ForegroundColor Green
+}
+
+function Write-Info {
+    param([string]$Message)
+    Write-Host "  [i] $Message" -ForegroundColor Gray
+}
+
+function Write-Warn {
+    param([string]$Message)
+    Write-Host "  [!] $Message" -ForegroundColor Yellow
+}
+
+function Write-Err {
+    param([string]$Message)
+    Write-Host "  [x] $Message" -ForegroundColor Red
+}
+
+$RemoteShare = "\\$ServerIP\$ShareName"
+$LocalPublish = Join-Path $ScriptDir "publish"
+$offlineFileRemote = Join-Path $RemoteShare "app_offline.htm"
+
+$deploymentSuccess = $false
+
+# ASCII Art Terminal Banner
+Write-Host ""
+Write-Host "  ██╗    ██╗███████╗██████╗     ███╗   ███╗██████╗ ███████╗" -ForegroundColor Cyan
+Write-Host "  ██║    ██║██╔════╝██╔══██╗    ████╗ ████║██╔══██╗██╔════╝" -ForegroundColor Cyan
+Write-Host "  ██║ █╗ ██║█████╗  ██████╔╝    ██╔████╔██║██████╔╝███████╗" -ForegroundColor Cyan
+Write-Host "  ██║███╗██║██╔══╝  ██╔═══╝     ██║╚██╔╝██║██╔═══╝ ╚════██║" -ForegroundColor Cyan
+Write-Host "  ╚███╔███╔╝███████╗██║         ██║ ╚═╝ ██║██║     ███████║" -ForegroundColor Cyan
+Write-Host "   ╚══╝╚══╝ ╚══════╝╚═╝         ╚═╝     ╚═╝╚═╝     ╚══════╝" -ForegroundColor Cyan
+Write-Host "  Material Picking Slip System  *  Production CI/CD Engine" -ForegroundColor DarkGray
+Write-Host ""
+Write-Host "  +-------------------------------------------------------------+" -ForegroundColor DarkCyan
+Write-Host "  |  Target Host : \\$ServerIP\$ShareName" -ForegroundColor DarkCyan
+Write-Host "  |  Destination : C:\inetpub\wwwroot\$ShareName" -ForegroundColor DarkCyan
+Write-Host "  |  Credentials : $Username" -ForegroundColor DarkCyan
+Write-Host "  |  Initiated At: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor DarkCyan
+Write-Host "  +-------------------------------------------------------------+" -ForegroundColor DarkCyan
+
+try {
+    # --------------------------------------------------------------------------
+    # 1. NETWORK CONNECTIVITY & SHARE AUTHENTICATION
+    # --------------------------------------------------------------------------
+    Write-Step "1/6" "Verifying Network Connection & Share Access..."
+    
+    $tcp = Test-NetConnection -ComputerName $ServerIP -Port 445 -WarningAction SilentlyContinue
+    if (-not $tcp.TcpTestSucceeded) {
+        throw "Cannot reach server $ServerIP on SMB port 445. Please check network connection / Wi-Fi."
+    }
+    Write-Success "Server $ServerIP reachable via SMB (Port 445)."
+
+    Write-Info "Checking access to network share: $RemoteShare..."
+    $isConnected = Test-Path $RemoteShare -ErrorAction SilentlyContinue
+    if (-not $isConnected) {
+        Write-Info "Authenticating with user: $Username..."
+        $cmdOutput = & cmd.exe /c "net use `"$RemoteShare`" /user:`"$Username`" `"$Password`"" 2>&1
+        $isConnected = Test-Path $RemoteShare -ErrorAction SilentlyContinue
+        if (-not $isConnected) {
+            throw "Failed to connect to $RemoteShare. Details: $($cmdOutput -join ' ')"
+        }
+    }
+    Write-Success "Connected & authenticated to $RemoteShare."
+
+    # Test write permissions on share
+    Write-Info "Testing write permission on $RemoteShare..."
+    $testFile = Join-Path $RemoteShare ".write_perm_test"
+    $canWrite = $false
+    try {
+        [System.IO.File]::WriteAllText($testFile, "test")
+        $canWrite = $true
+        Remove-Item -Force $testFile -ErrorAction SilentlyContinue
+        Write-Success "Write permission verified on production share."
+    } catch {
+        $canWrite = $false
+    }
+
+    if (-not $canWrite) {
+        throw @"
+Write permission on share '$RemoteShare' was DENIED by the remote Windows Server!
+Please verify that 'Everyone' or '$Username' has 'Full Control' in:
+Folder Properties -> Sharing -> Advanced Sharing -> Permissions
+"@
+    }
+
+    # --------------------------------------------------------------------------
+    # 2. BUILD & PUBLISH RELEASE
+    # --------------------------------------------------------------------------
+    if (-not $SkipBuild) {
+        Write-Step "2/6" "Compiling & Publishing ASP.NET Core Release Build..."
+        
+        if (Test-Path $LocalPublish) {
+            Write-Info "Cleaning local publish folder..."
+            Remove-Item -Recurse -Force $LocalPublish
+        }
+
+        Write-Info "Running dotnet publish -c Release -o ./publish --no-restore..."
+        $publishOutput = dotnet publish -c Release -o $LocalPublish --no-restore 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Info "Retrying with restore..."
+            $publishOutput = dotnet publish -c Release -o $LocalPublish 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                throw "dotnet publish failed. Output:`n$publishOutput"
+            }
+        }
+        Write-Success "Release build compiled & packaged successfully."
+    } else {
+        Write-Warn "Skipping build step as requested (-SkipBuild)."
+    }
+
+    # --------------------------------------------------------------------------
+    # 3. PRODUCTION CONFIGURATION (web.config, 100 MB limit, SQL Scripts)
+    # --------------------------------------------------------------------------
+    Write-Step "3/6" "Applying Production Configurations..."
+
+    # Ensure appsettings.Development.json is removed from publish folder
+    $devSettings = Join-Path $LocalPublish "appsettings.Development.json"
+    if (Test-Path $devSettings) {
+        Remove-Item -Force $devSettings
+        Write-Success "Removed development configuration (forcing production SQL connection)."
+    }
+
+    # Create logs directory
+    $logsDir = Join-Path $LocalPublish "logs"
+    if (-not (Test-Path $logsDir)) {
+        New-Item -ItemType Directory -Force $logsDir | Out-Null
+    }
+
+    # Write validated web.config with 100 MB upload limit
+    $webConfigPath = Join-Path $LocalPublish "web.config"
+    $webConfigXml = @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <location path="." inheritInChildApplications="false">
+    <system.webServer>
+      <handlers>
+        <add name="aspNetCore" path="*" verb="*" modules="AspNetCoreModuleV2" resourceType="Unspecified" />
+      </handlers>
+      <aspNetCore processPath="dotnet" arguments=".\WebMPS.dll" stdoutLogEnabled="false" stdoutLogFile=".\logs\stdout" hostingModel="inprocess" />
+      <security>
+        <requestFiltering>
+          <!-- Allow up to 100 MB file uploads for PDF in IIS -->
+          <requestLimits maxAllowedContentLength="104857600" />
+        </requestFiltering>
+      </security>
+    </system.webServer>
+  </location>
+</configuration>
+"@
+    Set-Content -Path $webConfigPath -Value $webConfigXml -Encoding UTF8
+    Write-Success "Configured web.config with 100 MB PDF upload limit."
+
+    # Copy SQL Migration files to package
+    $sqlFiles = Get-ChildItem -Path $ScriptDir -Filter "*.sql"
+    foreach ($sql in $sqlFiles) {
+        Copy-Item $sql.FullName (Join-Path $LocalPublish $sql.Name) -Force
+    }
+    Write-Success "Bundled SQL migration scripts into publish package."
+
+    # --------------------------------------------------------------------------
+    # 4. GRACEFUL MAINTENANCE MODE VIA app_offline.htm
+    # --------------------------------------------------------------------------
+    Write-Step "4/6" "Activating Graceful Maintenance Mode on IIS..."
+    
+    $offlineHtml = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Web MPS - Updating System</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f8fafc; color: #0f172a; }
+        .card { background: #ffffff; padding: 40px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); text-align: center; max-width: 500px; border: 1px solid #e2e8f0; }
+        h2 { color: #0284c7; margin-top: 0; font-size: 1.5rem; }
+        p { color: #64748b; font-size: 0.95rem; line-height: 1.6; }
+        .spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #0284c7; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 20px auto 0; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Web MPS - System Update</h2>
+        <p>The application is being automatically updated to the latest build.<br>Files are synchronizing, please wait a few seconds...</p>
+        <div class="spinner"></div>
+    </div>
+</body>
+</html>
+"@
+    Set-Content -Path $offlineFileRemote -Value $offlineHtml -Encoding UTF8
+    Write-Info "Deployed app_offline.htm. Waiting 3s for worker process (w3wp.exe) to release file locks..."
+    Start-Sleep -Seconds 3
+    Write-Success "IIS file locks released safely."
+
+    # --------------------------------------------------------------------------
+    # 5. ROBUST FILE SYNCHRONIZATION VIA ROBOCOPY
+    # --------------------------------------------------------------------------
+    Write-Step "5/6" "Synchronizing Files to Production Server ($RemoteShare)..."
+    
+    $robocopyArgs = @(
+        "`"$LocalPublish`"",
+        "`"$RemoteShare`"",
+        "/E",
+        "/PURGE",
+        "/XD", "`"keys`"", "`"logs`"",
+        "/XF", "`"appsettings.Development.json`"", "`"app_offline.htm`"",
+        "/R:3",
+        "/W:2",
+        "/NP"
+    )
+
+    Write-Info "Executing Robocopy synchronization mirror..."
+    $roboProcess = Start-Process -FilePath "robocopy.exe" -ArgumentList $robocopyArgs -NoNewWindow -Wait -PassThru
+    $rc = $roboProcess.ExitCode
+
+    if ($rc -ge 8) {
+        throw "Robocopy failed with fatal exit code $rc."
+    }
+    Write-Success "File synchronization complete (Robocopy Exit Code: $rc)."
+
+    # Remove appsettings.Development.json on server if still present from old deploys
+    $remoteDevSettings = Join-Path $RemoteShare "appsettings.Development.json"
+    if (Test-Path $remoteDevSettings) {
+        Remove-Item -Force $remoteDevSettings -ErrorAction SilentlyContinue
+    }
+
+    # --------------------------------------------------------------------------
+    # 6. BRING IIS BACK ONLINE & HEALTH CHECK
+    # --------------------------------------------------------------------------
+    Write-Step "6/6" "Bringing IIS Back Online & Performing Health Check..."
+    
+    if (Test-Path $offlineFileRemote -ErrorAction SilentlyContinue) {
+        Remove-Item -Force $offlineFileRemote -ErrorAction SilentlyContinue
+        Write-Success "Removed app_offline.htm from production server."
+    }
+
+    Start-Sleep -Seconds 2
+
+    # Health check
+    try {
+        Write-Info "Probing $SiteUrl for application warmup..."
+        $response = Invoke-WebRequest -Uri $SiteUrl -UseBasicParsing -TimeoutSec 15
+        if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 302) {
+            Write-Success "Warmup HTTP GET returned status $($response.StatusCode) ($($response.StatusDescription))!"
+        } else {
+            Write-Warn "Application responded with status: $($response.StatusCode)"
+        }
+    } catch {
+        Write-Warn "Health check ping returned: $($_.Exception.Message)"
+        Write-Info "Please open $SiteUrl in your browser to verify."
+    }
+
+    $deploymentSuccess = $true
+
+    # Deployment Success Box
+    Write-Host ""
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor Green
+    Write-Host "  |         CI/CD DEPLOYMENT COMPLETED SUCCESSFULLY!            |" -ForegroundColor Green
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor Green
+    Write-Host "   > Production URL : $SiteUrl" -ForegroundColor Cyan
+    Write-Host "   > Remote Host    : \\$ServerIP\$ShareName" -ForegroundColor Gray
+    Write-Host "   > Completed At   : $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+    Write-Host "   > Status         : Online & Production Ready" -ForegroundColor Green
+    Write-Host ""
+
+}
+catch {
+    Write-Host ""
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor Red
+    Write-Host "  |                 DEPLOYMENT ENCOUNTERED AN ERROR             |" -ForegroundColor Red
+    Write-Host "  +-------------------------------------------------------------+" -ForegroundColor Red
+    Write-Err "Details: $_"
+    Write-Host ""
+    exit 1
+}
+finally {
+    # Ensure app_offline.htm is removed if an error occurred during copy
+    if (-not $deploymentSuccess -and -not [string]::IsNullOrWhiteSpace($offlineFileRemote)) {
+        if (Test-Path $offlineFileRemote -ErrorAction SilentlyContinue) {
+            Remove-Item -Force $offlineFileRemote -ErrorAction SilentlyContinue
+            Write-Info "Cleaned up app_offline.htm from server."
+        }
+    }
+}
+

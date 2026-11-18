@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5E9" />
+      <stop offset="55%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </linearGradient>
+  </defs>
+  <!-- Squircle Background -->
+  <rect x="2" y="2" width="60" height="60" rx="15" fill="url(#bgGrad)" />
+  <rect x="3" y="3" width="58" height="58" rx="14" stroke="#FFFFFF" stroke-opacity="0.24" stroke-width="1.5" />
+
+  <!-- White Material Picking Slip Sheet -->
+  <path d="M14 14C14 11.8 15.8 10 18 10H36.5L45 18.5V48C45 50.2 43.2 52 41 52H18C15.8 52 14 50.2 14 48V14Z" fill="#FFFFFF" />
+  <!-- Folded Corner -->
+  <path d="M36.5 10V16.5C36.5 17.6 37.4 18.5 38.5 18.5H45L36.5 10Z" fill="#BAE6FD" />
+
+  <!-- Slip Header Lines -->
+  <rect x="19" y="18" width="14" height="3" rx="1.5" fill="#0284C7" />
+  <rect x="19" y="23.5" width="20" height="2.4" rx="1.2" fill="#94A3B8" opacity="0.65" />
+
+  <!-- Crisp Barcode Bars -->
+  <rect x="19" y="30" width="3.2" height="14" rx="0.8" fill="#0F172A" />
+  <rect x="23.8" y="30" width="1.8" height="14" rx="0.6" fill="#0F172A" />
+  <rect x="27.2" y="30" width="3.4" height="14" rx="0.8" fill="#0F172A" />
+  <rect x="32.2" y="30" width="1.8" height="14" rx="0.6" fill="#0F172A" />
+  <rect x="35.6" y="30" width="2.8" height="14" rx="0.8" fill="#0F172A" />
+
+  <!-- Emerald Handover Check Badge -->
+  <circle cx="46" cy="46" r="13.5" fill="#16A34A" stroke="#FFFFFF" stroke-width="3" />
+  <path d="M40.2 46.2L44.2 50.2L52.2 41.8" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

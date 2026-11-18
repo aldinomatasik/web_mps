@@ -1,0 +1,706 @@
+@page
+@using WebMPS.Models
+@model WebMPS.Pages.ApprovalModel
+@{
+    ViewData["Title"] = "Handover Approval";
+    ViewData["Subtitle"] = "";
+    bool isAdmin = User.IsInRole(AppRoles.Admin);
+    bool isPlannerUser = User.IsInRole(AppRoles.Planner);
+}
+
+@if (!string.IsNullOrEmpty(Model.FeedbackMessage))
+{
+    <div class="alert alert-@Model.FeedbackType alert-dismissible fade show d-flex align-items-center gap-2 mb-4 shadow-sm" role="alert">
+        <svg width="20" height="20" style="width:20px;height:20px;min-width:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <div class="fw-semibold">@Model.FeedbackMessage</div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Summary Statistics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="white-card p-3 d-flex align-items-center gap-3 mps-hover-card">
+            <div class="p-3 rounded-3" style="background: #dcfce7; color: #15803d;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <div>
+                <div class="text-muted small fw-semibold">Waiting Handover</div>
+                <div class="fs-4 fw-bold text-success" id="statWaitingCount">@Model.WaitingHandoverCount <span class="fs-6 text-muted fw-normal">Slips</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="white-card p-3 d-flex align-items-center gap-3 mps-hover-card">
+            <div class="p-3 rounded-3" style="background: #fef3c7; color: #b45309;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div>
+                <div class="text-muted small fw-semibold">Pending Approval</div>
+                <div class="fs-4 fw-bold text-warning">@Model.PendingCount <span class="fs-6 text-muted fw-normal">Slips</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="white-card p-3 d-flex align-items-center gap-3 mps-hover-card">
+            <div class="p-3 rounded-3" style="background: #f1f5f9; color: #0284c7;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+            </div>
+            <div>
+                <div class="text-muted small fw-semibold">Total Slips in System</div>
+                <div class="fs-4 fw-bold text-dark">@Model.TotalCount <span class="fs-6 text-muted fw-normal">Slips</span></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar: Filter by Planner, Status & Search -->
+<div class="filter-bar">
+    <form method="get" class="w-100 d-flex flex-wrap align-items-center gap-3">
+        <!-- Filter by Planner -->
+        <div class="d-flex align-items-center gap-2">
+            <label class="fw-bold text-dark small text-nowrap mb-0 d-flex align-items-center gap-1">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                @(isPlannerUser ? "Planner:" : "Filter by Planner:")
+            </label>
+            @if (isPlannerUser)
+            {
+                <input type="hidden" name="Planner" value="@Model.Planner" />
+                <span class="badge bg-light text-primary border px-2 py-2" style="font-size: 0.8rem;">@Model.Planner</span>
+            }
+            else
+            {
+                <select name="Planner" class="form-select form-select-sm fw-bold border-primary" style="min-width: 180px;" onchange="this.form.submit()">
+                    <option value="ALL" selected="@(string.IsNullOrEmpty(Model.Planner) || Model.Planner == "ALL")">All Planners (@Model.DistinctPlanners.Count)</option>
+                    @foreach (var pl in Model.DistinctPlanners)
+                    {
+                        <option value="@pl" selected="@(Model.Planner == pl)">@pl</option>
+                    }
+                </select>
+            }
+        </div>
+
+        <!-- Filter by Status -->
+        <div class="d-flex align-items-center gap-2">
+            <label class="fw-bold text-dark small text-nowrap mb-0">Status:</label>
+            <select name="Status" class="form-select form-select-sm" style="width: 180px;" onchange="this.form.submit()">
+                <option value="Pending" selected="@(Model.Status == "Pending" || string.IsNullOrEmpty(Model.Status))">Waiting Handover</option>
+                <option value="Done" selected="@(Model.Status == "Done")">Completed (Done)</option>
+                <option value="ALL" selected="@(Model.Status == "ALL")">All Slips</option>
+            </select>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="d-flex align-items-center gap-2 ms-auto">
+            <input type="text" name="Search" class="form-control form-control-sm" placeholder="Search Slip No / Part / Approver..." value="@Model.Search" style="width: 250px;" />
+            <button type="submit" class="btn btn-sm btn-primary" style="background: #0284c7;">Filter</button>
+            @if ((!isPlannerUser && !string.IsNullOrEmpty(Model.Planner) && Model.Planner != "ALL") || !string.IsNullOrEmpty(Model.Search) || (!string.IsNullOrEmpty(Model.Status) && Model.Status != "Pending"))
+            {
+                <a asp-page="/Approval" class="btn btn-sm btn-outline-secondary">Reset</a>
+            }
+        </div>
+    </form>
+</div>
+
+<!-- List of Approved Slips -->
+<div class="white-card p-0 overflow-hidden mb-4">
+    <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-light">
+        <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Approved Slips (<span id="tableSlipCount">@Model.Slips.Count</span>)
+        </h6>
+        @if (isAdmin)
+        {
+            <a asp-page="/Slips" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                Open Slip MPS
+            </a>
+        }
+    </div>
+
+    @if (!Model.Slips.Any())
+    {
+        <div class="text-center py-5 px-3">
+            <div class="mb-3">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+            <h5 class="fw-bold text-dark mb-2">No Approved Slips Yet</h5>
+            <p class="text-muted small mb-4" style="max-width: 480px; margin: 0 auto;">
+                This page displays approved Material Picking Slips waiting for handover completion.
+            </p>
+            @if (isAdmin)
+            {
+                <a asp-page="/Slips" class="btn btn-primary px-4 py-2 fw-semibold" style="background: #0284c7;">
+                    👉 Open Slip MPS
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light border-bottom text-muted" style="font-size: 0.78rem;">
+                    <tr>
+                        <th class="ps-3" style="width: 45px;">#</th>
+                        <th>SLIP NUMBER</th>
+                        <th style="min-width: 170px;">BARCODE</th>
+                        <th>PLANNER</th>
+                        <th>PART CODE & DESCRIPTION</th>
+                        <th>QTY & UNIT</th>
+                        <th>APPROVAL DATE</th>
+                        <th>APPROVED BY</th>
+                        <th class="text-end pe-3">ACTION</th>
+                    </tr>
+                </thead>
+                <tbody style="font-size: 0.84rem;">
+                    @{
+                        int rowIdx = 1;
+                    }
+                    @foreach (var slip in Model.Slips)
+                    {
+                        <tr id="row-@slip.Id" class="@(slip.IsScanned ? "slip-row-done" : "")">
+                            <td class="ps-3 text-muted fw-semibold">@(rowIdx++)</td>
+                            <td>
+                                <strong class="font-monospace text-dark can-strike @(slip.IsScanned ? "strike-text" : "")">#@slip.SlipNumber</strong>
+                                <div class="text-muted" style="font-size: 0.7rem;">Page @slip.OriginalPage - @slip.QuadrantLabel</div>
+                            </td>
+                            <td>
+                                <div class="py-1">
+                                    <div id="barcode-wrap-@slip.Id" class="@(slip.IsScanned ? "opacity-75" : "")">
+                                        @Html.Raw(WebMPS.Services.BarcodeHelper.GenerateSvgBarcode(slip.Barcode, 24))
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mt-1" style="font-size: 11px;">
+                                        <span class="font-monospace fw-bold text-dark can-strike @(slip.IsScanned ? "strike-text" : "")">@slip.SlipNumber</span>
+                                        <span id="scan-badge-@slip.Id">
+                                            @if (slip.IsScanned)
+                                            {
+                                                <span class="stamp-scanned-badge">✓ ALREADY SCANNED</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success" style="font-size: 0.65rem;">✓ Approved</span>
+                                            }
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border fw-semibold can-strike @(slip.IsScanned ? "strike-text" : "")">@slip.Planner</span>
+                                <div class="text-muted" style="font-size: 0.7rem;">TO: @slip.ToLocation</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark font-monospace can-strike @(slip.IsScanned ? "strike-text" : "")">@slip.PartCode</div>
+                                <div class="text-muted text-truncate can-strike @(slip.IsScanned ? "strike-text" : "")" style="max-width: 220px;" title="@slip.PartDescription">@slip.PartDescription</div>
+                            </td>
+                            <td>
+                                <strong class="text-dark can-strike @(slip.IsScanned ? "strike-text" : "")">@slip.Qty.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture)</strong>
+                                <span class="text-muted small">@slip.Unit</span>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-dark can-strike @(slip.IsScanned ? "strike-text" : "")">@slip.ApprovedAt?.ToString("dd/MM/yyyy")</div>
+                                <div class="text-muted small">@slip.ApprovedAt?.ToString("HH:mm:ss")</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-success can-strike @(slip.IsScanned ? "strike-text" : "")">@(string.IsNullOrEmpty(slip.ApprovedBy) ? slip.ReceiverSignature : slip.ApprovedBy)</div>
+                                <div class="text-muted" style="font-size: 0.72rem;">Receiver@(string.IsNullOrWhiteSpace(slip.ToLocation) ? "" : $" ({slip.ToLocation})")</div>
+                            </td>
+                            <td class="text-end pe-3">
+                                <div class="d-flex justify-content-end align-items-center gap-1">
+                                    <button type="button" class="btn btn-xs btn-outline-primary py-1 px-2" style="font-size: 0.75rem;" onclick="openSlipPreview('@slip.Id')">
+                                        View
+                                    </button>
+                                    <a href="/download/slip/@slip.Id" target="_blank" class="btn btn-xs btn-outline-secondary py-1 px-2" style="font-size: 0.75rem;">
+                                        PDF
+                                    </a>
+
+                                    <form method="post" asp-page-handler="ToggleDone" class="d-inline" onsubmit="return toggleDoneAjax(event, '@slip.Id', this, '@slip.SlipNumber');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="slipId" value="@slip.Id" />
+                                        <button type="submit" id="done-btn-@slip.Id"
+                                                class="btn btn-xs py-1 px-2 @(slip.IsScanned ? "btn-light text-muted border" : "btn-success fw-bold")"
+                                                style="font-size: 0.75rem;">
+                                            @(slip.IsScanned ? "Undo" : "✓ Done")
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Single Shared Reusable Preview Modal (Ultra-Fast Page Load) -->
+<div class="modal fade" id="sharedPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom bg-light">
+                <h6 class="modal-title fw-bold text-dark" id="sharedModalTitle">Material Picking Slip</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-white position-relative" id="sharedModalBody">
+                <div class="text-center py-4 text-muted">Loading...</div>
+            </div>
+            <div class="modal-footer bg-white border-top d-flex justify-content-between align-items-center">
+                <div>
+                    <button type="button" id="sharedModalDoneBtn" class="btn btn-sm btn-success fw-bold px-3 d-inline-flex align-items-center gap-1" onclick="modalSubmitDone()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span id="sharedModalDoneBtnText">✓ Done</span>
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <a id="sharedModalPdfLink" href="#" target="_blank" class="btn btn-sm btn-outline-secondary">Download PDF</a>
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let currentPreviewSlipId = null;
+    let currentPreviewSlipNumber = '';
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // -------------------------------------------------------------
+    // MODAL DONE BUTTON HANDLER
+    // -------------------------------------------------------------
+    async function modalSubmitDone() {
+        if (!currentPreviewSlipId) return;
+        const btn = document.getElementById('sharedModalDoneBtn');
+        const btnText = document.getElementById('sharedModalDoneBtnText');
+        const originalText = btnText ? btnText.textContent : 'Done';
+
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width: 12px; height: 12px;"></span> Processing...`;
+
+        const modalEl = document.getElementById('sharedPreviewModal');
+        const modalInstance = (modalEl && window.bootstrap && window.bootstrap.Modal)
+            ? bootstrap.Modal.getInstance(modalEl)
+            : null;
+
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const formData = new FormData();
+            formData.append('slipId', currentPreviewSlipId);
+            if (token) formData.append('__RequestVerificationToken', token);
+
+            const resp = await fetch('?handler=ToggleDoneAjax', {
+                method: 'POST',
+                headers: token ? { 'RequestVerificationToken': token } : {},
+                body: formData
+            });
+
+            if (!resp.ok) {
+                if (window.showMpsToast) showMpsToast('Failed to update status. Please try again.', 'error');
+                return;
+            }
+
+            const data = await resp.json();
+            if (data.success) {
+                if (modalInstance) modalInstance.hide();
+                handleDoneSuccess(currentPreviewSlipId, currentPreviewSlipNumber, data.isScanned);
+            } else {
+                if (window.showMpsToast) showMpsToast('Failed to update status.', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            if (window.showMpsToast) showMpsToast('An error occurred: ' + err.message, 'error');
+        } finally {
+            if (btn) btn.disabled = false;
+            if (btnText) btnText.textContent = originalText;
+        }
+    }
+
+    // -------------------------------------------------------------
+    // ROW INLINE DONE BUTTON HANDLER
+    // -------------------------------------------------------------
+    async function toggleDoneAjax(event, slipId, form, slipNumber) {
+        event.preventDefault();
+        const btn = document.getElementById('done-btn-' + slipId);
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" style="width: 12px; height: 12px;"></span>`;
+        }
+
+        try {
+            const resp = await fetch('?handler=ToggleDoneAjax', {
+                method: 'POST',
+                body: new FormData(form)
+            });
+
+            if (!resp.ok) {
+                form.submit();
+                return false;
+            }
+
+            const data = await resp.json();
+            if (data.success) {
+                handleDoneSuccess(slipId, slipNumber, data.isScanned);
+            } else {
+                if (window.showMpsToast) showMpsToast('Failed to update status.', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            form.submit();
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+        return false;
+    }
+
+    // -------------------------------------------------------------
+    // SHARED SUCCESS HANDLER (TABLE ROW REMOVAL & UPDATES)
+    // -------------------------------------------------------------
+    function handleDoneSuccess(slipId, slipNumber, isScanned) {
+        const row = document.getElementById('row-' + slipId);
+        const statusSelect = document.querySelector('select[name="Status"]');
+        const currentStatusFilter = statusSelect ? statusSelect.value : 'Pending';
+
+        if (isScanned && (currentStatusFilter === 'Pending' || !currentStatusFilter)) {
+            // Default "Waiting Handover" view: Remove row immediately!
+            if (row) {
+                row.style.transition = 'all 0.35s ease-out';
+                row.style.backgroundColor = '#dcfce7';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(25px)';
+
+                setTimeout(() => {
+                    row.remove();
+                    updateTableCountsAndIndices();
+                }, 350);
+            }
+
+            if (typeof celebrateMpsAvatar === 'function') {
+                celebrateMpsAvatar();
+            }
+
+            if (window.showMpsToast) {
+                showMpsToast(
+                    `✓ Slip #${slipNumber || slipId} marked as Done and moved to Audit History! <button type="button" class="btn btn-xs btn-outline-light ms-2 py-0 px-2 fw-bold" style="font-size: 0.72rem;" onclick="undoDoneSlip('${slipId}')">Undo</button>`,
+                    'success',
+                    6000
+                );
+            }
+        } else if (!isScanned && currentStatusFilter === 'Done') {
+            // In "Done" view: Undoing moves it back to Pending, so remove from Done table
+            if (row) {
+                row.style.transition = 'all 0.35s ease-out';
+                row.style.opacity = '0';
+                row.style.transform = 'translateX(-25px)';
+
+                setTimeout(() => {
+                    row.remove();
+                    updateTableCountsAndIndices();
+                }, 350);
+            }
+
+            if (window.showMpsToast) {
+                showMpsToast(`Slip #${slipNumber || slipId} restored to Waiting Handover.`, 'info');
+            }
+        } else {
+            // In "ALL" view: Toggle visual styles
+            const barcodeWrap = document.getElementById('barcode-wrap-' + slipId);
+            const scanBadge = document.getElementById('scan-badge-' + slipId);
+            const strikeEls = row ? row.querySelectorAll('.can-strike') : [];
+            const btn = document.getElementById('done-btn-' + slipId);
+
+            if (isScanned) {
+                row?.classList.add('slip-row-done');
+                barcodeWrap?.classList.add('opacity-75');
+                strikeEls.forEach(el => el.classList.add('strike-text'));
+                if (scanBadge) scanBadge.innerHTML = '<span class="stamp-scanned-badge">✓ ALREADY SCANNED</span>';
+                if (btn) {
+                    btn.className = 'btn btn-xs py-1 px-2 btn-light text-muted border';
+                    btn.textContent = 'Undo';
+                }
+            } else {
+                row?.classList.remove('slip-row-done');
+                barcodeWrap?.classList.remove('opacity-75');
+                strikeEls.forEach(el => el.classList.remove('strike-text'));
+                if (scanBadge) scanBadge.innerHTML = '<span class="badge bg-success" style="font-size: 0.65rem;">✓ Approved</span>';
+                if (btn) {
+                    btn.className = 'btn btn-xs py-1 px-2 btn-success fw-bold';
+                    btn.textContent = '✓ Done';
+                }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // INSTANT UNDO HELPER
+    // -------------------------------------------------------------
+    async function undoDoneSlip(slipId) {
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const formData = new FormData();
+            formData.append('slipId', slipId);
+            if (token) formData.append('__RequestVerificationToken', token);
+
+            const resp = await fetch('?handler=ToggleDoneAjax', {
+                method: 'POST',
+                headers: token ? { 'RequestVerificationToken': token } : {},
+                body: formData
+            });
+
+            const data = await resp.json();
+            if (data.success) {
+                if (window.showMpsToast) {
+                    showMpsToast('Slip restored to Waiting Handover.', 'info');
+                }
+                setTimeout(() => window.location.reload(), 400);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    // -------------------------------------------------------------
+    // RECALCULATE TABLE COUNTS & INDICES
+    // -------------------------------------------------------------
+    function updateTableCountsAndIndices() {
+        const tbody = document.querySelector('table tbody');
+        if (!tbody) return;
+        const rows = tbody.querySelectorAll('tr[id^="row-"]');
+
+        // Update header count
+        const countSpan = document.getElementById('tableSlipCount');
+        if (countSpan) countSpan.textContent = rows.length;
+
+        // Update Waiting Handover stat card
+        const statWaiting = document.getElementById('statWaitingCount');
+        if (statWaiting) {
+            const currentNum = parseInt(statWaiting.textContent) || 0;
+            const newNum = Math.max(0, currentNum - 1);
+            statWaiting.innerHTML = `${newNum} <span class="fs-6 text-muted fw-normal">Slips</span>`;
+        }
+
+        // Re-index row numbers
+        rows.forEach((r, idx) => {
+            const firstCell = r.querySelector('td:first-child');
+            if (firstCell) firstCell.textContent = idx + 1;
+        });
+
+        // Show empty card if 0 rows remain
+        if (rows.length === 0) {
+            const cardWrap = tbody.closest('.white-card');
+            if (cardWrap) {
+                const tableResp = cardWrap.querySelector('.table-responsive');
+                if (tableResp) tableResp.remove();
+
+                const emptyState = document.createElement('div');
+                emptyState.className = 'text-center py-5 px-3 mps-fade-in';
+                emptyState.innerHTML = `
+                    <div class="mb-3">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="1.5">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                    </div>
+                    <h5 class="fw-bold text-dark mb-2">All Slips Handed Over!</h5>
+                    <p class="text-muted small mb-0" style="max-width: 480px; margin: 0 auto;">
+                        All approved Material Picking Slips have been marked as Done and transferred to Audit History.
+                    </p>
+                `;
+                cardWrap.appendChild(emptyState);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------
+    // OPEN PREVIEW MODAL SCRIPT
+    // -------------------------------------------------------------
+    async function openSlipPreview(slipId) {
+        currentPreviewSlipId = slipId;
+        currentPreviewSlipNumber = '';
+
+        const modalEl = document.getElementById('sharedPreviewModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        const body = document.getElementById('sharedModalBody');
+        const title = document.getElementById('sharedModalTitle');
+        const pdfLink = document.getElementById('sharedModalPdfLink');
+        const doneBtn = document.getElementById('sharedModalDoneBtn');
+        const doneBtnText = document.getElementById('sharedModalDoneBtnText');
+
+        title.textContent = 'Loading slip...';
+        body.innerHTML = `
+            <div style="max-width: 500px; margin: 0 auto; padding: 12px 14px;">
+                <div class="d-flex justify-content-between align-items-center pb-2 mb-3 border-bottom">
+                    <div class="mps-skeleton" style="width: 65%; height: 22px;"></div>
+                    <div class="mps-skeleton" style="width: 38px; height: 24px;"></div>
+                </div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><div class="mps-skeleton" style="height: 14px; width: 85%;"></div></div>
+                    <div class="col-6"><div class="mps-skeleton" style="height: 14px; width: 75%;"></div></div>
+                    <div class="col-6"><div class="mps-skeleton" style="height: 14px; width: 90%;"></div></div>
+                    <div class="col-6"><div class="mps-skeleton" style="height: 14px; width: 80%;"></div></div>
+                </div>
+                <div class="mps-skeleton mb-2" style="width: 100%; height: 42px;"></div>
+                <div class="mps-skeleton mb-3" style="width: 100%; height: 54px;"></div>
+                <div class="d-flex gap-3 mb-3">
+                    <div class="mps-skeleton" style="width: 50%; height: 56px;"></div>
+                    <div class="mps-skeleton" style="width: 50%; height: 56px;"></div>
+                </div>
+                <div class="mps-skeleton mb-1" style="width: 180px; height: 26px;"></div>
+                <div class="mps-skeleton" style="width: 80px; height: 14px;"></div>
+            </div>
+        `;
+        pdfLink.href = '/download/slip/' + encodeURIComponent(slipId);
+        modal.show();
+
+        try {
+            const resp = await fetch('/api/slip/' + encodeURIComponent(slipId));
+            if (!resp.ok) throw new Error('Failed to load');
+            const s = await resp.json();
+
+            currentPreviewSlipNumber = s.slipNumber;
+            title.textContent = `Material Picking Slip: #${s.slipNumber} (Page ${s.originalPage} - ${s.quadrantLabel})`;
+
+            // Configure modal Done button based on current slip status
+            if (doneBtn && doneBtnText) {
+                doneBtn.disabled = false;
+                if (s.isScanned) {
+                    doneBtn.className = 'btn btn-sm btn-light text-muted border px-3 d-inline-flex align-items-center gap-1';
+                    doneBtnText.textContent = 'Undo';
+                } else {
+                    doneBtn.className = 'btn btn-sm btn-success fw-bold px-3 d-inline-flex align-items-center gap-1';
+                    doneBtnText.textContent = '✓ Done';
+                }
+            }
+
+            const peggedRows = (s.peggedOrders || []).map(o => `
+                <tr>
+                    <td>${escapeHtml(o.orderNumber)}</td>
+                    <td>${escapeHtml(o.peggedMaterial)}</td>
+                    <td style="text-align: right;">${escapeHtml(o.reqQty)}</td>
+                    <td style="text-align: right;">${escapeHtml(o.unit)}</td>
+                </tr>
+            `).join('');
+
+            const stampHtml = s.isScanned ? '<div class="modal-stamp-scanned mps-fade-in">ALREADY SCANNED</div>' : '';
+
+            body.innerHTML = `
+                ${stampHtml}
+                <div class="mps-slip-paper mps-fade-in" style="max-width: 500px; margin: 0 auto; background: #fff;">
+                    <div class="mps-header-row">
+                        <div class="mps-title">${escapeHtml(s.title)}</div>
+                        <div class="mps-tag-box">${escapeHtml(s.tag)}</div>
+                    </div>
+                    <div class="mps-meta-grid">
+                        <div class="mps-meta-item"><span class="mps-label">PLANNER:</span> <span class="mps-val">${escapeHtml(s.planner)}</span></div>
+                        <div></div>
+                        <div class="mps-meta-item"><span class="mps-label">SLIP NUMBER:</span> <span class="mps-val font-monospace">${escapeHtml(s.slipNumber)}</span></div>
+                        <div class="mps-meta-item"><span class="mps-label">SUPPLY DATE:</span> <span class="mps-val">${escapeHtml(s.supplyDate)}</span></div>
+                        <div class="mps-meta-item"><span class="mps-label">FROM:</span> <span class="mps-val">${escapeHtml(s.fromLocation)}</span></div>
+                        <div class="mps-meta-item"><span class="mps-label">REQ. DATE:</span> <span class="mps-val">${escapeHtml(s.reqDate)}</span></div>
+                        <div class="mps-meta-item"><span class="mps-label">TO:</span> <span class="mps-val">${escapeHtml(s.toLocation)}</span></div>
+                        <div></div>
+                    </div>
+                    <table class="mps-section-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">PART CODE</th>
+                                <th style="width: 45%;">DESCRIPTION</th>
+                                <th style="width: 18%; text-align: right;">QTY</th>
+                                <th style="width: 12%; text-align: right;">UNIT</th>
+                            </tr>
+                            <tr class="mps-sub-head">
+                                <th>VMI &nbsp;&nbsp; VENDOR</th>
+                                <th>VENDOR DESCRIPTION</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="font-weight: normal;">
+                                <td>${escapeHtml(s.partCode)}</td>
+                                <td>${escapeHtml(s.partDescription)}</td>
+                                <td style="text-align: right;">${escapeHtml(s.qty)}</td>
+                                <td style="text-align: right;">${escapeHtml(s.unit)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table class="mps-section-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">ORDER</th>
+                                <th style="width: 45%;">PEGGED MATERIAL</th>
+                                <th style="width: 18%; text-align: right;">REQ</th>
+                                <th style="width: 12%; text-align: right;">UNIT</th>
+                            </tr>
+                        </thead>
+                        <tbody>${peggedRows}</tbody>
+                    </table>
+                    <div class="mps-sig-container">
+                        <div class="mps-sig-box">
+                            <div class="mps-sig-title">DELIVERY SIGNATURE</div>
+                            <div class="mps-sig-content">
+                                <div class="mps-sig-name" title="${escapeHtml(s.deliverySignature)}">${escapeHtml(s.deliverySignature)}</div>
+                                <div class="mps-sig-date">${s.deliverySignature ? escapeHtml(s.deliveryDate) : ''}</div>
+                            </div>
+                        </div>
+                        <div class="mps-sig-box">
+                            <div class="mps-sig-title">RECEIVER SIGNATURE</div>
+                            <div class="mps-sig-content">
+                                <div class="mps-sig-name" title="${escapeHtml(s.receiverSignature)}">${escapeHtml(s.receiverSignature)}</div>
+                                <div class="mps-sig-date">${s.receiverSignature ? escapeHtml(s.approvedDate) : ''}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mps-barcode-container">
+                        ${s.barcodeSvg}
+                        <div class="mps-barcode-text">${escapeHtml(s.slipNumber)}</div>
+                    </div>
+                </div>
+            `;
+
+            if (window.fitMpsSignatureNames) {
+                window.fitMpsSignatureNames(body);
+                requestAnimationFrame(() => window.fitMpsSignatureNames(body));
+                setTimeout(() => window.fitMpsSignatureNames(body), 60);
+            }
+        } catch (err) {
+            body.innerHTML = '<div class="alert alert-danger">Failed to load slip details.</div>';
+        }
+    }
+</script>
+}

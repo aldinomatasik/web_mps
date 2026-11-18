@@ -1,0 +1,32 @@
+## Visual Studio & .NET Core
+bin/
+obj/
+publish/
+ci-publish/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Archives & Large Sample Files
+*.zip
+MPS_05112026 120937 PM.pdf
+WebMPS_Flow_Process.pptx
+
+## Visual Studio Code
+.vscode/*
+!.vscode/tasks.json
+!.vscode/settings.json
+
+## Antigravity / Temporary
+.gemini/
+*.log
+
+## App Data (Runtime persistent storage)
+App_Data/
+logs/
+
+## Local Secrets & Deployment Credentials (use *.example / *.Example.json templates)
+appsettings.json
+appsettings.Development.json
+deploy.ps1

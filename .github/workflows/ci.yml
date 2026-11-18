@@ -1,0 +1,49 @@
+name: Web MPS CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-verify:
+    name: Build & Verify (.NET 10 Release)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore WebMPS.csproj
+
+      - name: Build (Release)
+        run: dotnet build WebMPS.csproj --configuration Release --no-restore
+
+      - name: Publish Release artifact
+        run: dotnet publish WebMPS.csproj --configuration Release --no-build --output ./ci-publish
+
+      - name: Verify published output
+        run: |
+          test -f ./ci-publish/WebMPS.dll
+          test -f ./ci-publish/WebMPS.deps.json
+          test -d ./ci-publish/wwwroot
+          echo "Release publish artifact verified successfully."
+
+      - name: Upload Release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-mps-release-${{ github.run_number }}
+          path: ./ci-publish
+          retention-days: 7

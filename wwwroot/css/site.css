@@ -1,0 +1,740 @@
+:root {
+  --sidebar-width: 270px;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --border-color: #e2e8f0;
+  --border-dark: #000000;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --brand-blue: #0284c7;
+  --brand-blue-hover: #0369a1;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+}
+
+body {
+  background-color: #ffffff;
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Hide Microsoft Edge / IE native duplicate eye icon on password inputs */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input::-ms-reveal,
+input::-ms-clear {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+}
+
+/* App Layout */
+.app-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* Sidebar */
+.app-sidebar {
+  width: var(--sidebar-width);
+  background-color: #ffffff;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 100;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.02);
+}
+
+.sidebar-brand {
+  padding: 22px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
+.sidebar-brand-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand-badge {
+  font-size: 0.65rem;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sidebar-brand-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.sidebar-nav {
+  padding: 18px 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav-section-title {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  padding: 10px 12px 6px;
+}
+
+.nav-link-custom {
+  display: flex;
+  align-items: center;
+  padding: 11px 14px;
+  color: #334155;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 4px;
+  transition: all 0.15s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.nav-link-custom:hover {
+  background-color: #f1f5f9;
+  color: #0284c7;
+}
+
+.nav-link-custom.active {
+  background-color: #f0f9ff;
+  color: #0284c7;
+  border-color: #bae6fd;
+}
+
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.sidebar-counter {
+  margin-left: auto;
+  font-size: 0.75rem;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.nav-link-custom.active .sidebar-counter {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+/* Sidebar Footer Info */
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border-color);
+  background: #fafafa;
+  font-size: 0.8rem;
+}
+
+/* Main Content */
+.app-main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 100vh;
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+}
+
+.app-body {
+  padding: 32px;
+  flex: 1;
+  background-color: #ffffff;
+}
+
+/* White theme cards */
+.white-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+/* Material Picking Slip styles are defined centrally in _Layout.cshtml */
+
+/* Status Badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.status-badge.pending {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.status-badge.approved {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* Filter Bar */
+.filter-bar {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+/* =========================================================
+   Smooth UI Micro-Interactions, Card Hover & Skeleton Shimmer
+   ========================================================= */
+@keyframes mpsFadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mpsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mpsShimmer {
+  0% { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+@keyframes mpsRowPulse {
+  0% { background-color: #dcfce7; }
+  100% { background-color: transparent; }
+}
+
+/* Page content entrance (skip modals to preserve fixed stacking) */
+.app-body > #mpsPageContent > *:not(.modal),
+.login-card {
+  animation: mpsFadeSlideUp 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mps-fade-in {
+  animation: mpsFadeIn 0.2s ease-out both;
+}
+
+.mps-row-flash {
+  animation: mpsRowPulse 0.75s ease-out;
+}
+
+/* Smooth Button Animations */
+.btn:not(.btn-link):not(.btn-close) {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s ease,
+              background-color 0.18s ease,
+              border-color 0.18s ease,
+              color 0.18s ease;
+}
+
+@media (hover: hover) {
+  .btn:not(.btn-link):not(.btn-close):not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+  }
+  .btn-primary:not(:disabled):hover {
+    box-shadow: 0 5px 14px rgba(2, 132, 199, 0.28);
+  }
+  .btn-success:not(:disabled):hover {
+    box-shadow: 0 5px 14px rgba(22, 163, 74, 0.26);
+  }
+  .btn-outline-danger:not(:disabled):hover {
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.18);
+  }
+}
+
+.btn:not(.btn-link):not(.btn-close):not(:disabled):active {
+  transform: translateY(0) scale(0.97) !important;
+  box-shadow: none !important;
+}
+
+/* Form Input Focus Polish */
+.form-control,
+.form-select {
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+/* Card & Filter Bar Hover Effects */
+.white-card,
+.filter-bar,
+.mps-hover-card,
+.mps-slip-card {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+}
+
+@media (hover: hover) {
+  .mps-hover-card:hover {
+    transform: translateY(-3px);
+    border-color: #bae6fd !important;
+    box-shadow: 0 12px 24px -8px rgba(15, 23, 42, 0.10), 0 4px 10px -4px rgba(2, 132, 199, 0.10) !important;
+  }
+
+  .mps-slip-card:hover {
+    transform: translateY(-3px);
+    border-color: #7dd3fc !important;
+    box-shadow: 0 14px 28px -10px rgba(15, 23, 42, 0.12), 0 4px 10px -4px rgba(2, 132, 199, 0.10) !important;
+  }
+
+  .white-card:hover {
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+  }
+}
+
+/* Sidebar Nav & Table Row Smooth Hover */
+.nav-link-custom {
+  transition: transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+              background-color 0.16s ease,
+              color 0.16s ease,
+              border-color 0.16s ease !important;
+}
+
+@media (hover: hover) {
+  .nav-link-custom:hover {
+    transform: translateX(3px);
+  }
+}
+
+.table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+/* Skeleton Shimmer Components */
+.mps-skeleton {
+  background: linear-gradient(90deg, #e2e8f0 0px, #f8fafc 45%, #e2e8f0 90%);
+  background-size: 600px 100%;
+  animation: mpsShimmer 1.3s infinite linear;
+  border-radius: 6px;
+}
+
+.mps-skeleton-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.mps-skeleton-loader {
+  animation: mpsFadeIn 0.15s ease-out both;
+}
+
+/* =========================================================
+   Quizizz-Inspired Chibi Factory Operator Mascots & Profile Card
+   ========================================================= */
+@keyframes chibiFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2.4px) rotate(1.4deg); }
+}
+
+@keyframes chibiBlink {
+  0%, 42%, 47%, 90%, 95%, 100% { transform: scaleY(1); }
+  45%, 93% { transform: scaleY(0.1); }
+}
+
+@keyframes chibiCrownTilt {
+  0%, 100% { transform: rotate(-4deg) translateY(0); }
+  50% { transform: rotate(5deg) translateY(-1.2px); }
+}
+
+@keyframes chibiWave {
+  0% { transform: rotate(-10deg) translateY(0); }
+  100% { transform: rotate(18deg) translateY(-2px); }
+}
+
+@keyframes chibiSparkle {
+  0%, 100% { opacity: 0.45; transform: scale(0.82) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.18) rotate(15deg); }
+}
+
+@keyframes chibiCelebrate {
+  0% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-7px) scale(1.12) rotate(-5deg); }
+  55% { transform: translateY(1px) scale(0.95) rotate(4deg); }
+  80% { transform: translateY(-3px) scale(1.05); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes adminPillSheen {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes popoverPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.mps-chibi-svg {
+  overflow: visible;
+  display: block;
+}
+
+.mps-chibi-svg .chibi-body-group,
+.mps-chibi-svg .chibi-eyes-open,
+.mps-chibi-svg .chibi-crown,
+.mps-chibi-svg .chibi-hand,
+.mps-chibi-svg .chibi-sparkles {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.mps-chibi-svg .chibi-body-group {
+  animation: chibiFloat 2.6s ease-in-out infinite;
+}
+
+.mps-chibi-svg .chibi-eyes-open {
+  animation: chibiBlink 3.8s ease-in-out infinite;
+  transition: opacity 0.14s ease;
+}
+
+.mps-chibi-svg .chibi-eyes-happy {
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+
+.mps-chibi-svg .chibi-crown {
+  animation: chibiCrownTilt 2.4s ease-in-out infinite;
+}
+
+.mps-chibi-svg .chibi-sparkles {
+  opacity: 0.72;
+  animation: chibiSparkle 2s ease-in-out infinite;
+}
+
+/* Interactive User Profile Pill in Topbar */
+.mps-user-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.mps-user-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 5px;
+  border-radius: 999px;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s ease,
+              border-color 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+}
+
+.mps-user-pill:hover,
+.mps-user-pill.is-open {
+  transform: translateY(-1.5px);
+}
+
+.mps-user-pill:active {
+  transform: scale(0.97);
+}
+
+.mps-avatar-ring {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: visible;
+  border: 1.5px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+}
+
+.mps-role-chip {
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+}
+
+/* Role-Specific Pill Themes */
+.mps-user-pill.mps-role-admin {
+  border-color: #93c5fd;
+  background: linear-gradient(120deg, #eff6ff, #f0f9ff, #e0e7ff, #f0f9ff);
+  background-size: 240% 240%;
+  animation: adminPillSheen 6s ease infinite;
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.14);
+}
+.mps-user-pill.mps-role-admin:hover,
+.mps-user-pill.mps-role-admin.is-open {
+  border-color: #3b82f6;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.22);
+}
+.mps-role-admin .mps-avatar-ring {
+  background: linear-gradient(135deg, #dbeafe, #e0e7ff);
+}
+.mps-role-admin .mps-role-chip {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+}
+
+.mps-user-pill.mps-role-planner {
+  border-color: #bae6fd;
+  background: linear-gradient(120deg, #f0f9ff, #e0f2fe);
+}
+.mps-user-pill.mps-role-planner:hover,
+.mps-user-pill.mps-role-planner.is-open {
+  border-color: #0284c7;
+  box-shadow: 0 5px 15px rgba(2, 132, 199, 0.18);
+}
+.mps-role-planner .mps-avatar-ring {
+  background: #e0f2fe;
+}
+.mps-role-planner .mps-role-chip {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.mps-user-pill.mps-role-to {
+  border-color: #a7f3d0;
+  background: linear-gradient(120deg, #ecfdf5, #dcfce7);
+}
+.mps-user-pill.mps-role-to:hover,
+.mps-user-pill.mps-role-to.is-open {
+  border-color: #16a34a;
+  box-shadow: 0 5px 15px rgba(22, 163, 74, 0.18);
+}
+.mps-role-to .mps-avatar-ring {
+  background: #dcfce7;
+}
+.mps-role-to .mps-role-chip {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.mps-user-pill.mps-role-uploader {
+  border-color: #fde68a;
+  background: linear-gradient(120deg, #fffbeb, #fef3c7);
+}
+.mps-user-pill.mps-role-uploader:hover,
+.mps-user-pill.mps-role-uploader.is-open {
+  border-color: #d97706;
+  box-shadow: 0 5px 15px rgba(217, 119, 6, 0.18);
+}
+.mps-role-uploader .mps-avatar-ring {
+  background: #fef3c7;
+}
+.mps-role-uploader .mps-role-chip {
+  background: #d97706;
+  color: #ffffff;
+}
+
+/* Hover & Celebrate Mascot Reactions */
+.mps-user-pill:hover .mps-chibi-svg .chibi-eyes-open,
+.mps-user-pill.is-open .mps-chibi-svg .chibi-eyes-open,
+.mps-chibi-stage:hover .mps-chibi-svg .chibi-eyes-open,
+.is-celebrating .mps-chibi-svg .chibi-eyes-open {
+  opacity: 0;
+}
+
+.mps-user-pill:hover .mps-chibi-svg .chibi-eyes-happy,
+.mps-user-pill.is-open .mps-chibi-svg .chibi-eyes-happy,
+.mps-chibi-stage:hover .mps-chibi-svg .chibi-eyes-happy,
+.is-celebrating .mps-chibi-svg .chibi-eyes-happy {
+  opacity: 1;
+}
+
+.mps-user-pill:hover .mps-chibi-svg .chibi-hand,
+.mps-chibi-stage:hover .mps-chibi-svg .chibi-hand,
+.is-celebrating .mps-chibi-svg .chibi-hand {
+  animation: chibiWave 0.36s ease-in-out infinite alternate;
+}
+
+.is-celebrating .mps-chibi-svg .chibi-body-group,
+.mps-chibi-stage:active .mps-chibi-svg .chibi-body-group {
+  animation: chibiCelebrate 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Mini Character Card Popover (Quizizz Profile Style) */
+.mps-char-card {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 285px;
+  max-width: calc(100vw - 24px);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.20), 0 4px 12px rgba(2, 132, 199, 0.08);
+  overflow: hidden;
+  z-index: 250;
+  animation: popoverPopIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mps-chibi-stage {
+  position: relative;
+  padding: 18px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.mps-stage-admin { background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%); }
+.mps-stage-planner { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); }
+.mps-stage-to { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); }
+.mps-stage-uploader { background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); }
+
+.mps-stage-avatar-circle {
+  width: 86px;
+  height: 86px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 3px solid #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mps-chibi-stage:hover .mps-stage-avatar-circle {
+  transform: scale(1.06);
+}
+
+.mps-online-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  display: inline-block;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print Stylesheet for A6 Single Slip */
+@media print {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .app-sidebar,
+  .app-topbar,
+  .no-print,
+  .mps-skeleton-loader,
+  .filter-bar,
+  .nav,
+  .btn,
+  .alert,
+  .card-footer {
+    display: none !important;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .app-body {
+    padding: 0 !important;
+  }
+
+  .mps-slip-paper {
+    border: none !important;
+    box-shadow: none !important;
+    page-break-after: always;
+    margin: 0 !important;
+    padding: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
